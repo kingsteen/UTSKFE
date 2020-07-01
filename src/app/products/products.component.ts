@@ -5,6 +5,7 @@ import {MatPaginator} from '@angular/material/paginator';
 import {MatSort} from '@angular/material/sort';
 import {merge, Observable, of as observableOf} from 'rxjs';
 import {catchError, map, startWith, switchMap} from 'rxjs/operators';
+import { CloseScrollStrategy } from '@angular/cdk/overlay';
 
 
 @Component({
@@ -14,9 +15,9 @@ import {catchError, map, startWith, switchMap} from 'rxjs/operators';
 })
 export class ProductsComponent implements AfterViewInit{
 
-  displayedColumns: string[] = ['id', 'name', 'description', 'type', 'department', 'weight'];
-  exampleDatabase: ProductData | null;
-  data: ProductList[] = [];
+  displayedColumns: string[] = ['id', 'name', 'description', 'value', 'currency', 'type', 'department', 'weight'];
+  database: ProductData | null;
+  data: ProductApi[] = [];
 
   resultsLength = 0;
   isLoadingResults = true;
@@ -28,25 +29,26 @@ export class ProductsComponent implements AfterViewInit{
   constructor(private _httpClient: HttpClient) {}
 
   ngAfterViewInit() {
-    this.exampleDatabase = new ProductData(this._httpClient);
+    this.database = new ProductData(this._httpClient);
 
     // If the user changes the sort order, reset back to the first page.
-    this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+    // this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
 
-    merge(this.sort.sortChange, this.paginator.page)
+    merge(this.paginator.page)
       .pipe(
         startWith({}),
         switchMap(() => {
           this.isLoadingResults = true;
-          return this.exampleDatabase!.getProducts(
+          return this.database!.getProducts(
             this.sort.active, this.sort.direction, this.paginator.pageIndex);
         }),
         map(data => {
+          console.log(data['data']);
           this.isLoadingResults = false;
           this.isRateLimitReached = false;
-          this.resultsLength = data.total_count;
+          this.resultsLength = data['total'];
 
-          return data.items;
+          return data['data'];
         }),
         catchError(() => {
           this.isLoadingResults = false;
@@ -66,10 +68,11 @@ export interface ProductList {
   id: number;
   name: string;
   description: string;
-  // price: {
-  //   value: number;
-  //   currency: number;
-  // };
+  price: {
+    value: number;
+    currency: string;
+  };
+  type: string;
   value: number;
   currency: number;
   weight: number
@@ -79,12 +82,13 @@ export interface ProductList {
 export class ProductData {
   constructor(private _httpClient: HttpClient) {}
 
-  getProducts(sort: string, order: string, page: number): Observable<ProductApi> {
+  getProducts(sort: string, order: string, page: number): Observable<ProductApi[]> {
     const href = environment.apiUrl + 'get-products';
+    // const href = environment.testUrl + 'get-products';
     console.log(href)
     // const requestUrl =
     //     `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${page + 1}`;
 
-    return this._httpClient.get<ProductApi>(href);
+    return this._httpClient.get<ProductApi[]>(href);
   }
 }

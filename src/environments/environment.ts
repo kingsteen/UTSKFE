@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://www.shaunkingdev.co.uk/'
+  apiUrl: 'http://www.shaunkingdev.co.uk/',
+  testUrl: 'http://127.0.0.1:3000/'
 };
 
 /*
